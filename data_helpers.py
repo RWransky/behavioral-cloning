@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from skimage import io
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import cv2
 import os
@@ -26,12 +27,13 @@ def get_training_data():
     img_files = np.vstack((imgs1, imgs2))
     labels = np.vstack((angles1, angles2))
     images = convert_paths_to_images(img_files)
-    plt.imshow(images[1300])
-    plt.show()
+    # split data into training and validation datasets
+    train_data, validate_data, train_labels, validate_labels = split_data(images, labels)
+    return train_data, validate_data, train_labels, validate_labels
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 80, 320, 3))
+    img_array = np.zeros((files.shape[0], 80, 320, 3), dtype=np.uint8)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i][0])
     return img_array
@@ -39,6 +41,10 @@ def convert_paths_to_images(files):
 
 def convert_to_image(image):
     return io.imread(image)
+
+
+def split_data(images, labels):
+    return train_test_split(images, labels, test_size=0.33)
 
 
 def main():
