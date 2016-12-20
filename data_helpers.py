@@ -44,14 +44,15 @@ def convert_continous_angles_to_probabilities(labels):
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 80, 320, 3), dtype=np.uint8)
+    img_array = np.zeros((files.shape[0], 20, 80, 3), dtype=np.uint8)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i][0])
     return img_array
 
 
 def convert_to_image(image):
-    return io.imread(image)
+    img = io.imread(image)
+    return cv2.resize(np.uint8(img), (80, 20))
 
 
 def split_data(images, labels):
