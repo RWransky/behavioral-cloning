@@ -26,10 +26,21 @@ def get_training_data():
     # stack two sources into one
     img_files = np.vstack((imgs1, imgs2))
     labels = np.vstack((angles1, angles2))
+    # convert inputs and outputs
+    labels = convert_continous_angles_to_probabilities(labels)
     images = convert_paths_to_images(img_files)
     # split data into training and validation datasets
     train_data, validate_data, train_labels, validate_labels = split_data(images, labels)
     return train_data, validate_data, train_labels, validate_labels
+
+
+# Convert steering angles of range -25 to 25 and map to 0 to 1
+def convert_continous_angles_to_probabilities(labels):
+    # add 25 to get amounts to be between 0 and 50
+    labels = labels + 25
+    # divide by 50 to convert b/w 0 and 1
+    labels = labels / 50
+    return labels
 
 
 def convert_paths_to_images(files):
