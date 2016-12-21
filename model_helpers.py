@@ -1,7 +1,5 @@
-def accuracy(targets, predicted, tol=1e-2):
-    rate = 0
-    total = targets.shape[0]
-    for i in range(total):
-        if abs(targets[i] - predicted[i]) <= tol:
-            rate += 1
-    return rate/float(total)
+import numpy as np
+
+
+def accuracy(labels, predictions):
+    return (100.0 * np.sum(np.argmax(predictions, 1) == np.argmax(labels, 1))/predictions.shape[0])

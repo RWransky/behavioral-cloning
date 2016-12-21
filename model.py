@@ -27,8 +27,11 @@ path = "./weights"
 
 def train():
     # load training and validation data sets
-    train_dataset, valid_dataset, train_angles, valid_angles = get_training_data()
-
+    train_dataset, valid_dataset, train_labels, valid_labels = get_training_data()
+    train_labels = np.uint8(train_labels)
+    valid_labels = np.uint8(valid_labels)
+    print('Size of training dataset is: {} samples'.format(train_dataset.shape[0]))
+    print('Size of validation dataset is: {} samples'.format(valid_dataset.shape[0]))
     tf.reset_default_graph()
     mainN = Network()
 
@@ -54,24 +57,24 @@ def train():
 
         for step in range(num_steps):
             print('Processing step {}'.format(step))
-            offset = (step * batch_size) % (train_angles.shape[0] - batch_size)
+            offset = (step * batch_size) % (train_labels.shape[0] - batch_size)
             batch_data = train_dataset[offset:(offset + batch_size), :, :, :]
-            batch_angles = train_angles[offset:(offset + batch_size)]
-            _, lossA, yP = sess.run([mainN.update, mainN.loss, mainN.probs],
-                feed_dict={mainN.input_layer: batch_data, mainN.angles: batch_angles})
+            batch_labels = train_labels[offset:(offset + batch_size)]
+            _, lossA, yP, L0 = sess.run([mainN.update, mainN.loss, mainN.probs, mainN.label_oh],
+                feed_dict={mainN.input_layer: batch_data, mainN.label_layer: batch_labels})
             losses.append(lossA)
-            accuracies.append(accuracy(batch_angles, yP))
+            accuracies.append(accuracy(L0, yP))
             if (step % 50 == 0):
                 print('Minibatch loss at step %d: %f' % (step, lossA))
-                print('Minibatch accuracy: %.1f%%' % accuracy(yP, batch_angles))
-                yP = sess.run([mainN.probs],
-                    feed_dict={mainN.input_layer: valid_dataset, mainN.angles: valid_angles})
-                print('Validation accuracy: %.1f%%' % accuracy(yP, valid_angles))
+                print('Minibatch accuracy: %.1f%%' % accuracy(L0, yP))
+                # yP, L0 = sess.run([mainN.probs, mainN.label_oh],
+                #     feed_dict={mainN.input_layer: valid_dataset, mainN.label_layer: valid_labels})
+                # print('Validation accuracy: %.1f%%' % accuracy(yP, L0))
                 saver.save(sess, path+'/model-'+str(step)+'.cptk')
                 print("Saved Model")
-        yP = sess.run([mainN.probs],
-            feed_dict={mainN.input_layer: valid_dataset, mainN.angles: valid_angles})
-        print('Validation accuracy: %.1f%%' % accuracy(yP, valid_angles))
+        yP, L0 = sess.run([mainN.probs, mainN.label_oh],
+            feed_dict={mainN.input_layer: valid_dataset, mainN.label_layer: valid_labels})
+        print('Validation accuracy: %.1f%%' % accuracy(L0, yP))
         saver.save(sess, path+'/model-'+str(step)+'.cptk')
         print("Saved Model")
         plt.figure(1)

@@ -7,11 +7,11 @@ Adopted from @awjuliani by @MWransky
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
-num_labels = 99
+num_labels = 101
 reg_parameter = 0.001
-learn_rate = 0.001
+learn_rate = 0.01
 # total layers need to be divisible by 5
-total_layers = 5
+total_layers = 15
 units_between_stride = int(total_layers / 5)
 
 
@@ -19,7 +19,8 @@ class Network():
     def __init__(self):
         # The network recieves a batch of images
         self.input_layer = tf.placeholder(shape=[None, 20, 80, 3], dtype=tf.float32, name='input')
-        self.angles = tf.placeholder(shape=[None, 1], dtype=tf.float32, name='output')
+        self.label_layer = tf.placeholder(shape=[None], dtype=tf.uint8, name='output')
+        self.label_oh = slim.layers.one_hot_encoding(self.label_layer, num_labels)
         with slim.arg_scope([slim.conv2d, slim.fully_connected],
             normalizer_fn=slim.batch_norm,
             activation_fn=tf.nn.relu,
@@ -37,12 +38,13 @@ class Network():
             # extract transition layer
             # self.top = slim.conv2d(self.layer, num_labels, [3, 3],
                 # normalizer_fn=slim.batch_norm, activation_fn=None, scope='conv_top')
-            self.top = slim.fully_connected(slim.layers.flatten(self.layer), 1,
+            self.top = slim.fully_connected(slim.layers.flatten(self.layer), num_labels,
                 activation_fn=None, scope='fully_connected_top')
         # generate softmax probabilities
         self.probs = tf.nn.softmax(self.top)
         # calculate reduce mean loss function
-        self.loss = tf.sqrt(tf.reduce_mean(tf.square(tf.sub(self.angles, self.probs))))
+        self.loss = tf.reduce_mean(-tf.reduce_sum(
+            self.label_oh * tf.log(self.probs) + 1e-10, reduction_indices=[1]))
         # optimizer
         self.trainer = tf.train.AdamOptimizer(learning_rate=learn_rate)
         # minimization
