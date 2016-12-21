@@ -12,12 +12,23 @@ base_path = os.getcwd()
 def pull_data(track):
     # load csv file
     df = pd.read_csv('{0}/{1}/driving_log.csv'.format(base_path, track))
-    center_imgs = df[['center']].values
+    # remove last entry in data frame
+    df = df[0:-1]
+    # pull all records that have a steering angle of 0 and find how many there are
+    zero_records = df.loc[df['angle'] == 0]
+    num_zero = len(df.loc[df['angle'] == 0])
+    percent_keep_zero = num_zero/float(len(df))
+    subset_zero = zero_records[int(num_zero*percent_keep_zero):]
+    nonzero_records = df.loc[df['angle'] != 0]
+    # combine two data frames
+    df_final = pd.concat([subset_zero, nonzero_records])
+    df_final = df_final.reindex(np.random.permutation(df_final.index))
+    center_imgs = df_final[['center']].values
     file_paths = np.copy(center_imgs)
     for i in range(center_imgs.shape[0]):
         file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
-    angles = df[['angle']].values
-    return file_paths[0:-1], angles[0:-1]
+    angles = df_final[['angle']].values
+    return file_paths, angles
 
 
 def get_training_data():

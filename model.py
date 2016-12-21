@@ -17,9 +17,9 @@ from network import *
 # Setting the training parameters
 
 # How many experience traces to use for each training step.
-batch_size = 8
+batch_size = 32
 # Number of training steps
-num_steps = 251
+num_steps = 1001
 load_model = False
 # The path to save our model to.
 path = "./weights"
@@ -64,7 +64,7 @@ def train():
                 feed_dict={mainN.input_layer: batch_data, mainN.label_layer: batch_labels})
             losses.append(lossA)
             accuracies.append(accuracy(L0, yP))
-            if (step % 50 == 0):
+            if (step % 500 == 0):
                 print('Minibatch loss at step %d: %f' % (step, lossA))
                 print('Minibatch accuracy: %.1f%%' % accuracy(L0, yP))
                 # yP, L0 = sess.run([mainN.probs, mainN.label_oh],
