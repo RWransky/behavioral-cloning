@@ -16,9 +16,12 @@ def train():
     print('Size of training dataset is: {} samples'.format(train_dataset.shape[0]))
     print('Size of validation dataset is: {} samples'.format(valid_dataset.shape[0]))
 
+    train_angles = np.expand_dims(train_angles, -1)
+    valid_angles = np.expand_dims(valid_angles, -1)
+
     # define loss function and training metric
 
-    loss = 'mean_squared_error'
+    loss = 'sparse_categorical_crossentropy'
     metric = 'acc'
 
     print('Building network ...')
@@ -36,14 +39,14 @@ def train():
     start_time = time.time()
 
     saving = 'highway_model'
-    fParams = '{0}/{1}.hdf5'.format(path, saving)
+    fParams = '{0}/{1}.h5'.format(path, saving)
     saveParams = ModelCheckpoint(fParams, monitor='val_loss', save_best_only=True)
 
     callbacks = [saveParams]
 
     his = model.fit(train_dataset, train_angles,
                     validation_data=(valid_dataset, valid_angles),
-                    nb_epoch=20, batch_size=100,
+                    nb_epoch=5, batch_size=100,
                     callbacks=callbacks)
 
     # save model to json file

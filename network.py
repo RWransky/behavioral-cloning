@@ -4,7 +4,7 @@ from keras.constraints import *
 from keras.layers.normalization import BatchNormalization
 
 
-def build_network(n_layers=10, dim=32, input_shape=[20, 80, 3], n_classes=1, shared=0):
+def build_network(n_layers=4, dim=32, input_shape=[20, 80, 3], n_classes=101, shared=0):
     # input_shape is [n_rows, n_cols, num_channels] of the input images
     activation = 'relu'
 
@@ -32,6 +32,6 @@ def build_network(n_layers=10, dim=32, input_shape=[20, 80, 3], n_classes=1, sha
     model.add(Dropout(0.3))
 
     model.add(Flatten())
-    model.add(Dense(n_classes, init='he_normal'))
+    model.add(Dense(n_classes, init='he_normal', activation='softmax'))
 
     return model
