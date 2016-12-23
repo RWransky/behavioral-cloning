@@ -4,7 +4,7 @@ from keras.constraints import *
 from keras.layers.normalization import BatchNormalization
 
 
-def build_network(n_layers=10, dim=32, input_shape=[20, 80, 3], n_classes=1 shared=0):
+def build_network(n_layers=10, dim=32, input_shape=[20, 80, 3], n_classes=1, shared=0):
     # input_shape is [n_rows, n_cols, num_channels] of the input images
     activation = 'relu'
 
@@ -18,11 +18,9 @@ def build_network(n_layers=10, dim=32, input_shape=[20, 80, 3], n_classes=1 shar
         return HighwayUnit(dim, 3, 3, activation=activation, transform_bias=trans_bias, border_mode='same')
 
     nrows, ncols, nchannels = input_shape
-    model = Sequential([
-        Reshape((1, nrows, ncols, nchannels), input_shape=(nrows*ncols*nchannels,)),
-        Dropout(0.2),
-        Convolution2D(dim, 5, 5, activation=act)
-    ])
+    model = Sequential()
+    model.add(Convolution2D(dim, 3, 3, activation=activation, input_shape=(nrows, ncols, nchannels)))
+    model.add(Dropout(0.2))
 
     model.add(BatchNormalization())
 

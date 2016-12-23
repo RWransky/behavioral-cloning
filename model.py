@@ -10,9 +10,9 @@ from data_helpers import *
 
 def train():
     print('Loading data...')
-    train_dataset, valid_dataset, train_labels, valid_labels = get_training_data()
-    train_labels = np.uint8(train_labels)
-    valid_labels = np.uint8(valid_labels)
+    train_dataset, valid_dataset, train_angles, valid_angles = get_training_data()
+    train_angles = np.uint8(train_angles)
+    valid_angles = np.uint8(valid_angles)
     print('Size of training dataset is: {} samples'.format(train_dataset.shape[0]))
     print('Size of validation dataset is: {} samples'.format(valid_dataset.shape[0]))
 
@@ -35,13 +35,14 @@ def train():
 
     start_time = time.time()
 
+    saving = 'highway_model'
     fParams = '{0}/{1}.hdf5'.format(path, saving)
     saveParams = ModelCheckpoint(fParams, monitor='val_loss', save_best_only=True)
 
     callbacks = [saveParams]
 
-    his = model.fit(train_x, train_y,
-                    validation_data=(valid_x, valid_y),
+    his = model.fit(train_dataset, train_angles,
+                    validation_data=(valid_dataset, valid_angles),
                     nb_epoch=20, batch_size=100,
                     callbacks=callbacks)
 

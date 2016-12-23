@@ -45,7 +45,7 @@ class HighwayUnit(Layer):
 
     def build(self, input_shape):
         stack_size = input_shape[3]
-            self.W_shape = (self.nb_row, self.nb_col, stack_size, self.nb_filter)
+        self.W_shape = (self.nb_row, self.nb_col, stack_size, self.nb_filter)
 
         self.W = self.init(self.W_shape, name='{}_W'.format(self.name))
         self.W_gate = self.init(self.W_shape, name='{}_W_carry'.format(self.name))
@@ -53,7 +53,7 @@ class HighwayUnit(Layer):
         # set up trainable weights
         if self.bias:
             self.b = K.zeros((self.nb_filter,), name='{}_b'.format(self.name))
-            self.b_gate = K.variable(numpy.ones(self.nb_filter,), name='{}_b_gate'.format(self.name))
+            self.b_gate = K.variable(np.ones(self.nb_filter,), name='{}_b_gate'.format(self.name))
             self.trainable_weights = [self.W, self.b, self.W_gate, self.b_gate]
         else:
             self.trainable_weights = [self.W, self.W_gate]
