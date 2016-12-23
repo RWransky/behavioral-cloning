@@ -11,3 +11,7 @@ random
 matplotlib
 pandas
 h5py
+flask-socketio
+eventlet
+pillow
+keras
