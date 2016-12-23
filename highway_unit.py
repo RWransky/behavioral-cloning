@@ -15,7 +15,7 @@ from keras.engine.topology import Layer
 
 
 class HighwayUnit(Layer):
-    def __init__(self, nb_filter, nb_row, nb_col, transform_bias=-1,
+    def __init__(self, nb_filter=32, nb_row=3, nb_col=3, transform_bias=-1,
                  init='glorot_uniform', activation='relu', weights=None,
                  border_mode='same', subsample=(1, 1), dim_ordering='tf',
                  W_regularizer=None, b_regularizer=None, activity_regularizer=None,
@@ -107,3 +107,21 @@ class HighwayUnit(Layer):
         carry_gate = 1.0 - transform_gate
 
         return transform * transform_gate + x * carry_gate
+
+    # Define get_config method so load_from_json can run
+    def get_config(self):
+        config = {'nb_filter': self.nb_filter,
+                  'nb_row': self.nb_row,
+                  'nb_col': self.nb_col,
+                  'transform_bias': self.transform_bias,
+                  'init': self.init.__name__,
+                  'activation': self.activation.__name__,
+                  'border_mode': self.border_mode,
+                  'subsample': self.subsample,
+                  'dim_ordering': self.dim_ordering,
+                  'W_regularizer': self.W_regularizer.get_config() if self.W_regularizer else None,
+                  'b_regularizer': self.b_regularizer.get_config() if self.b_regularizer else None,
+                  'activity_regularizer': self.activity_regularizer.get_config() if self.activity_regularizer else None,
+                  'bias': self.bias}
+        base_config = super(HighwayUnit, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))

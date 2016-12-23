@@ -11,7 +11,10 @@ import cv2
 from flask import Flask, render_template
 from io import BytesIO
 
-from network import *
+from highway_unit import *
+
+from keras.models import model_from_json
+from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
@@ -52,6 +55,7 @@ def telemetry(sid, data):
     image = cv2.imdecode(npimg, 1)
     scaled_image = image_helper(image)
     steering_angle = float(model.predict(scaled_image, batch_size=1))
+    print(steering_angle)
     angle = rescale_angle(steering_angle)
     throttle = 0.2
     print(angle, throttle)
@@ -74,7 +78,8 @@ def send_control(steering_angle, throttle):
 # Helper method to resize image to 20x80x3 and convert to HSV colorspace
 def image_helper(image):
     img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    return cv2.resize(np.uint8(img), (80, 20))
+    img = cv2.resize(np.uint8(img), (80, 20))
+    return img[np.newaxis, ...]
 
 
 # Convert angles from [0.1,0.9] -> [-25,25]
@@ -88,10 +93,10 @@ if __name__ == '__main__':
         help='Path to model definition json. Model weights should be on the same path.')
     args = parser.parse_args()
     with open(args.model, 'r') as jfile:
-        model = model_from_json(json.load(jfile))
+        model = model_from_json(jfile.read(), {'HighwayUnit': HighwayUnit})
 
     model.compile(optimizer='adam', loss='mean_squared_error')
-    weights_file = args.model.replace('json', 'h5')
+    weights_file = args.model.replace('json', 'hdf5')
     model.load_weights(weights_file)
 
     # wrap Flask application with engineio's middleware
