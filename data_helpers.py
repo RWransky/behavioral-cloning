@@ -36,26 +36,21 @@ def get_training_data():
     imgs2, angles2 = pull_data('track_2')
     # stack two sources into one
     img_files = np.vstack((imgs1, imgs2))
-    labels = np.vstack((angles1, angles2))
+    angles = np.vstack((angles1, angles2))
     # convert inputs and outputs
-    labels = convert_continous_angles_to_bins(labels)
+    angles = reformat_continous_angles(angles)
     images = convert_paths_to_images(img_files)
     # split data into training and validation datasets
-    train_data, validate_data, train_labels, validate_labels = split_data(images, labels)
-    return train_data, validate_data, train_labels, validate_labels
+    train_data, validate_data, train_angles, validate_angles = split_data(images, angles)
+    return train_data, validate_data, train_angles, validate_angles
 
 
-# Convert steering angles of range -25 to 25 and map to 0 to 1
-def convert_continous_angles_to_bins(labels, lower_angle=-25, upper_angle=25):
-    bin_labels = np.zeros(labels.size)
-    lower_range = lower_angle
-    label_count = 0
-    while lower_range < upper_angle + 0.5:
-        indx = np.where((labels < lower_range + 0.5).all(axis=1) & (labels >= lower_range).all(axis=1))
-        bin_labels[indx] = label_count
-        lower_range += 0.5
-        label_count += 1
-    return np.uint8(bin_labels)
+# Convert steering angles of range -25 to 25 and map to 0.1 to 0.9
+def reformat_continous_angles(angles, lower_angle=-25, upper_angle=25):
+    reformat_angles = np.zeros(angles.size)
+    for i in range(angles.shape[0]):
+        reformat_angles[i] = 0.016 * angles[i] + 0.5
+    return reformat_angles
 
 
 def convert_paths_to_images(files):
@@ -70,8 +65,8 @@ def convert_to_image(image):
     return cv2.resize(np.uint8(img), (80, 20))
 
 
-def split_data(images, labels):
-    return train_test_split(images, labels, test_size=0.1)
+def split_data(images, angles):
+    return train_test_split(images, angles, test_size=0.1)
 
 
 def main():
