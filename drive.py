@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 
 from highway_unit import *
+from model_helpers import *
 
 from keras.models import model_from_json
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
@@ -26,6 +27,16 @@ sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
+
+train_mean_red = np.load('train_mean_red')
+train_std_red = np.load('train_std_red')
+train_mean_green = np.load('train_mean_green')
+train_std_green= np.load('train_std_green')
+train_mean_blue = np.load('train_mean_blue')
+train_std_blue = np.load('train_std_blue')
+# Normalize imaging data
+train_mean = [train_mean_red, train_mean_green, train_mean_blue]
+train_std = [train_std_red, train_std_green, train_std_blue]
 
 
 @sio.on('telemetry')
@@ -62,16 +73,18 @@ def send_control(steering_angle, throttle):
     }, skip_sid=True)
 
 
-# Helper method to resize image to 20x80x3
+# Helper method to resize image to 20x80x3 and apply normalization
 def image_helper(image):
     img = cv2.resize(np.uint8(image), (80, 20))
+    img = intensity_normalization(img)
+    for i in range(3):
+        img[:, :, i] = (img[:, :, i] - train_mean[i])/train_std[i]
     return img[np.newaxis, ...]
 
 
 # Convert angles from bins -> [-25,25]
 def rescale_angle(bins):
     label = np.argmax(bins, 1)[0]
-    print(label)
     return 0.5*label - 25
 
 
