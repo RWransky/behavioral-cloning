@@ -28,16 +28,16 @@ app = Flask(__name__)
 model = None
 prev_image_array = None
 
-train_mean_red = np.load('train_mean_red')
-train_std_red = np.load('train_std_red')
-train_mean_green = np.load('train_mean_green')
-train_std_green= np.load('train_std_green')
-train_mean_blue = np.load('train_mean_blue')
-train_std_blue = np.load('train_std_blue')
+train_mean_red = np.load('train_mean_red.npy')
+train_std_red = np.load('train_std_red.npy')
+train_mean_green = np.load('train_mean_green.npy')
+train_std_green= np.load('train_std_green.npy')
+train_mean_blue = np.load('train_mean_blue.npy')
+train_std_blue = np.load('train_std_blue.npy')
 # Normalize imaging data
 train_mean = [train_mean_red, train_mean_green, train_mean_blue]
 train_std = [train_std_red, train_std_green, train_std_blue]
-
+print(train_std)
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -53,7 +53,7 @@ def telemetry(sid, data):
     npimg = np.fromstring(img, dtype=np.uint8)
     image = cv2.imdecode(npimg, 1)
     scaled_image = image_helper(image)
-    steering_angle = model.predict(scaled_image)
+    steering_angle = float(model.predict(scaled_image, batch_size=1))
     angle = rescale_angle(steering_angle)
     throttle = 0.2
     print(angle, throttle)
@@ -77,15 +77,18 @@ def send_control(steering_angle, throttle):
 def image_helper(image):
     img = cv2.resize(np.uint8(image), (80, 20))
     img = intensity_normalization(img)
-    for i in range(3):
-        img[:, :, i] = (img[:, :, i] - train_mean[i])/train_std[i]
+    # for i in range(3):
+    #     img[:, :, i] = (img[:, :, i] - train_mean[i])/train_std[i]
     return img[np.newaxis, ...]
 
 
 # Convert angles from bins -> [-25,25]
-def rescale_angle(bins):
-    label = np.argmax(bins, 1)[0]
-    return 0.5*label - 25
+def rescale_angle(angle, lower_angle=-25, upper_angle=25):
+    print(angle)
+    return angle*(upper_angle - lower_angle) + lower_angle
+    # Uncomment section below for bin to angle conversion
+    # label = np.argmax(bins, 1)[0]
+    # return 0.5*label - 25
 
 
 if __name__ == '__main__':
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     with open(args.model, 'r') as jfile:
         model = model_from_json(jfile.read(), {'HighwayUnit': HighwayUnit()})
 
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')
+    model.compile(optimizer='adam', loss='mean_squared_error')
     weights_file = args.model.replace('json', 'h5')
     model.load_weights(weights_file)
 

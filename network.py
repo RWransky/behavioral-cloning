@@ -4,7 +4,7 @@ from keras.constraints import *
 from keras.layers.normalization import BatchNormalization
 
 
-def build_network(n_layers=4, dim=64, input_shape=[20, 80, 3], n_classes=101, shared=0):
+def build_network(n_layers=4, dim=32, input_shape=[20, 80, 3], n_classes=1, shared=0):
     # input_shape is [n_rows, n_cols, num_channels] of the input images
     activation = 'relu'
 
@@ -24,10 +24,26 @@ def build_network(n_layers=4, dim=64, input_shape=[20, 80, 3], n_classes=101, sh
 
     model.add(BatchNormalization())
 
-    for i in range(2):
-        model.add(_highway())
-        model.add(BatchNormalization())
-        model.add(Dropout(0.3))
+    model.add(Convolution2D(64, 3, 3, activation=activation))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.4))
+
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='same'))
+
+    model.add(Convolution2D(256, 3, 3, activation=activation))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.3))
+
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='same'))
+
+    model.add(Convolution2D(256, 3, 3, activation=activation))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.3))
+
+    # for i in range(2):
+    #     model.add(_highway())
+    #     model.add(BatchNormalization())
+    #     model.add(Dropout(0.5))
 
     # for i in range(2):
     #     model.add(_highway())
@@ -36,7 +52,10 @@ def build_network(n_layers=4, dim=64, input_shape=[20, 80, 3], n_classes=101, sh
 
     # model.add(Dropout(0.3))
 
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='same'))
+
     model.add(Flatten())
-    model.add(Dense(n_classes, init='he_normal', activation='softmax'))
+    model.add(Dense(256, init='he_normal', activation='tanh'))
+    model.add(Dense(n_classes, init='he_normal', activation=activation))
 
     return model

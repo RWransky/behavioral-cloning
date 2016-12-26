@@ -26,8 +26,8 @@ def pull_data(track):
         # pull all records that have a steering angle of 0 and find how many there are
         zero_records = df.loc[df['angle'] == 0]
         num_zero = len(df.loc[df['angle'] == 0])
-        percent_keep_zero = 0.5
-        subset_zero = zero_records[int(num_zero*percent_keep_zero):]
+        percent_remove_zero = 0.2
+        subset_zero = zero_records[int(num_zero*percent_remove_zero):]
         nonzero_records = df.loc[df['angle'] != 0]
         # combine two data frames
         df_final = pd.concat([subset_zero, nonzero_records])
@@ -42,24 +42,21 @@ def pull_data(track):
 
 def get_training_data():
     imgs1, angles1 = pull_data('track_1')
-    imgs2, angles2 = pull_data('drifting')
+    imgs2, angles2 = pull_data('track_2')
     # stack two sources into one
     img_files = np.vstack((imgs1, imgs2))
     angles = np.vstack((angles1, angles2))
     # convert inputs and outputs
-    angles = convert_continous_angles_to_bins(angles)
+    angles = reformat_continous_angles(angles)
     images = convert_paths_to_images(img_files)
     # split data into training and validation datasets
     train_data, validate_data, train_angles, validate_angles = split_data(images, angles)
     return train_data, validate_data, train_angles, validate_angles
 
 
-# Convert steering angles of range -25 to 25 and map to 0.1 to 0.9
+# Convert steering angles of range -25 to 25 and map to [0,1]
 def reformat_continous_angles(angles, lower_angle=-25, upper_angle=25):
-    reformat_angles = np.zeros(angles.size)
-    for i in range(angles.shape[0]):
-        reformat_angles[i] = 0.016 * angles[i] + 0.5
-    return reformat_angles
+    return (angles - lower_angle)/float(upper_angle - lower_angle)
 
 
 # Convert steering angles to categorical bins
