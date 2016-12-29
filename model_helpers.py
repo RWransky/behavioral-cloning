@@ -7,4 +7,4 @@ def accuracy(labels, predictions):
 
 def intensity_normalization(image):
     image = image.astype('float')
-    return image / 255.0
+    return image / float(255.0)

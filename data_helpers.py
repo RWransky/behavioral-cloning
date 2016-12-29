@@ -17,18 +17,19 @@ def pull_data(track):
 
     # specify different parsing logic for drifting training
     if track == 'drifting':
-        angles = df[['angle']].values
+        df = df.reindex(np.random.permutation(df.index))
+        angles = df[['steering']].values
         center_imgs = df[['center']].values
         file_paths = np.copy(center_imgs)
         for i in range(center_imgs.shape[0]):
             file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
     else:
         # pull all records that have a steering angle of 0 and find how many there are
-        zero_records = df.loc[df['angle'] == 0]
-        num_zero = len(df.loc[df['angle'] == 0])
-        percent_remove_zero = 0.2
+        zero_records = df.loc[df['steering'] == 0]
+        num_zero = len(zero_records)
+        percent_remove_zero = 0.3
         subset_zero = zero_records[int(num_zero*percent_remove_zero):]
-        nonzero_records = df.loc[df['angle'] != 0]
+        nonzero_records = df.loc[df['steering'] != 0]
         # combine two data frames
         df_final = pd.concat([subset_zero, nonzero_records])
         df_final = df_final.reindex(np.random.permutation(df_final.index))
@@ -36,18 +37,18 @@ def pull_data(track):
         file_paths = np.copy(center_imgs)
         for i in range(center_imgs.shape[0]):
             file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
-        angles = df_final[['angle']].values
+        angles = df_final[['steering']].values
     return file_paths, angles
 
 
 def get_training_data():
     imgs1, angles1 = pull_data('track_1')
-    imgs2, angles2 = pull_data('track_2')
+    imgs2, angles2 = pull_data('drifting')
     # stack two sources into one
     img_files = np.vstack((imgs1, imgs2))
     angles = np.vstack((angles1, angles2))
     # convert inputs and outputs
-    angles = reformat_continous_angles(angles)
+    # angles = convert_continous_angles_to_bins(angles)
     images = convert_paths_to_images(img_files)
     # split data into training and validation datasets
     train_data, validate_data, train_angles, validate_angles = split_data(images, angles)
@@ -73,15 +74,17 @@ def convert_continous_angles_to_bins(labels, lower_angle=-25, upper_angle=25):
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 20, 80, 3), dtype=np.uint8)
+    img_array = np.zeros((files.shape[0], 80, 260, 3), dtype=float)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i][0])
     return img_array
 
 
 def convert_to_image(image):
-    img = io.imread(image)
-    return cv2.resize(np.uint8(img), (80, 20))
+    img = cv2.imread(image)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+    return img[80:, 40:300, :]
+    # return cv2.resize(np.uint8(img), (80, 20))
 
 
 def split_data(images, angles):
