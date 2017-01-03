@@ -14,12 +14,16 @@ from io import BytesIO
 
 from highway_unit import *
 from model_helpers import *
+from network import intensity_norm
 from keras.models import model_from_json
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
+import keras.activations
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
 tf.python.control_flow_ops = tf
+# Patch custom activation
+keras.activations.intensity_norm = intensity_norm
 
 
 sio = socketio.Server()
@@ -41,8 +45,9 @@ def telemetry(sid, data):
     npimg = np.fromstring(img, dtype=np.uint8)
     image = cv2.imdecode(npimg, 1)
     scaled_image = image_helper(image)
-    steering_angle = float(model.predict(scaled_image, batch_size=1))
-    throttle = 0.2
+    outputs = model.predict(scaled_image, batch_size=1)
+    steering_angle = float(outputs[0][0])
+    throttle = float(outputs[0][1])
     print(steering_angle, throttle)
     send_control(float(steering_angle), throttle)
 
@@ -62,8 +67,8 @@ def send_control(steering_angle, throttle):
 
 # Helper method to resize image to 80x260x3 and convert to YUV
 def image_helper(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
-    img = img[80:, 40:300, :]
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    img = img[80:, 40:300, 1:]
     return img[np.newaxis, ...]
 
 

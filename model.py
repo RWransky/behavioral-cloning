@@ -12,7 +12,7 @@ from model_helpers import *
 
 def train():
     print('Loading data...')
-    train_dataset, valid_dataset, train_angles, valid_angles = get_training_data()
+    train_dataset, valid_dataset, train_outputs, valid_outputs = get_training_data()
 
     # define loss function and training metric
 
@@ -46,9 +46,9 @@ def train():
 
     callbacks = [saveParams]
 
-    model.fit(train_dataset, train_angles, verbose=1,
-              validation_data=(valid_dataset, valid_angles),
-              nb_epoch=5, batch_size=10, callbacks=callbacks)
+    model.fit(train_dataset, train_outputs, verbose=1,
+              validation_data=(valid_dataset, valid_outputs),
+              nb_epoch=15, batch_size=1, callbacks=callbacks)
 
     end_time = time.time()
 
