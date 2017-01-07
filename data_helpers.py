@@ -14,32 +14,21 @@ def pull_data(track):
     df = pd.read_csv('{0}/{1}/driving_log.csv'.format(base_path, track))
     # remove last entry in data frame
     df = df[0:-2]
-
-    # specify different parsing logic for drifting training
-    if track == 'drifting':
-        df = df.reindex(np.random.permutation(df.index))
-        angles = df[['steering']].values
-        center_imgs = df[['center']].values
-        file_paths = np.copy(center_imgs)
-        for i in range(center_imgs.shape[0]):
-            file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
-        throttles = df[['throttle']].values
-    else:
-        # pull all records that have a steering angle of 0 and find how many there are
-        zero_records = df.loc[df['steering'] == 0]
-        num_zero = len(zero_records)
-        percent_remove_zero = 0.25
-        subset_zero = zero_records[int(num_zero*percent_remove_zero):]
-        nonzero_records = df.loc[df['steering'] != 0]
-        # combine two data frames
-        df_final = pd.concat([subset_zero, nonzero_records])
-        df_final = df_final.reindex(np.random.permutation(df_final.index))
-        center_imgs = df_final[['center']].values
-        file_paths = np.copy(center_imgs)
-        for i in range(center_imgs.shape[0]):
-            file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
-        angles = df_final[['steering']].values
-        throttles = df_final[['throttle']].values
+    # pull all records that have a steering angle of 0 and find how many there are
+    zero_records = df.loc[df['steering'] == 0]
+    num_zero = len(zero_records)
+    percent_remove_zero = 0.3
+    subset_zero = zero_records[int(num_zero*percent_remove_zero):]
+    nonzero_records = df.loc[df['steering'] != 0]
+    # combine two data frames
+    df_final = pd.concat([subset_zero, nonzero_records])
+    df_final = df_final.reindex(np.random.permutation(df_final.index))
+    center_imgs = df_final[['center']].values
+    file_paths = np.copy(center_imgs)
+    for i in range(center_imgs.shape[0]):
+        file_paths[i] = '{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0])
+    angles = df_final[['steering']].values
+    throttles = df_final[['throttle']].values
     return file_paths, angles, throttles
 
 
@@ -62,7 +51,7 @@ def get_training_data():
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 80, 260, 2), dtype=float)
+    img_array = np.zeros((files.shape[0], 110, 320, 2), dtype=float)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i][0])
     return img_array
@@ -70,8 +59,8 @@ def convert_paths_to_images(files):
 
 def convert_to_image(image):
     img = cv2.imread(image)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    return img[80:, 40:300, 1:]
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+    return img[50:, :, 1:]
 
 
 def split_data(images, angles, throttles):
