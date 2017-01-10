@@ -12,18 +12,21 @@ from flask import Flask, render_template
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-from highway_unit import *
-from model_helpers import *
-from network import intensity_norm
+from warp import *
+from sobel import *
+
+from network import intensity_norm, custom_init
 from keras.models import model_from_json
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
 import keras.activations
+import keras.initializations
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
 tf.python.control_flow_ops = tf
 # Patch custom activation
 keras.activations.intensity_norm = intensity_norm
+keras.initializations.custom_init = custom_init
 
 
 sio = socketio.Server()
@@ -46,10 +49,9 @@ def telemetry(sid, data):
     image = cv2.imdecode(npimg, 1)
     scaled_image = image_helper(image)
     outputs = model.predict(scaled_image, batch_size=1)
-    steering_angle = float(outputs[0][0])
-    throttle = float(outputs[0][1])
-    print(steering_angle, throttle)
-    send_control(float(steering_angle), throttle)
+    steering_angle = float(outputs[0])
+    # throttle = float(outputs[0][1])
+    send_control(float(steering_angle), 0.2)
 
 
 @sio.on('connect')
@@ -65,11 +67,12 @@ def send_control(steering_angle, throttle):
     }, skip_sid=True)
 
 
-# Helper method to resize image to 80x260x3 and convert to YUV
+# Helper method for image input
 def image_helper(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    img = img[80:, 40:300, 1:]
-    return img[np.newaxis, ...]
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    warped = warp_perspective(np.uint8(img))
+    img = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
+    return np.float32(img[np.newaxis, ..., np.newaxis])
 
 
 if __name__ == '__main__':
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.model, 'r') as jfile:
         # model = model_from_json(jfile.read(), {'HighwayUnit': HighwayUnit()})
-        model = model_from_json(jfile.read(), custom_objects={'intensity_norm': intensity_norm})
+        model = model_from_json(jfile.read(), custom_objects={'intensity_norm': intensity_norm, 'custom_init': custom_init})
 
     model.compile(optimizer='adam', loss='mse')
     weights_file = args.model.replace('json', 'h5')

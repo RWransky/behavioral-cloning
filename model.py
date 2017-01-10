@@ -7,13 +7,9 @@ from keras.callbacks import *
 
 from network import *
 from data_helpers import *
-from model_helpers import *
 
 
 def train():
-    print('Loading data...')
-    train_dataset, valid_dataset, train_outputs, valid_outputs = get_training_data()
-
     # define loss function and training metric
 
     loss = 'mse'
@@ -34,6 +30,9 @@ def train():
     json_str = model.to_json()
     fModel.write(json_str)
 
+    print('Loading data...')
+    train_dataset, valid_dataset, train_outputs, valid_outputs = get_training_data()
+
     print('Training...')
     path = './training'
     if not os.path.exists(path):
@@ -48,7 +47,7 @@ def train():
 
     model.fit(train_dataset, train_outputs, verbose=1,
               validation_data=(valid_dataset, valid_outputs),
-              nb_epoch=15, batch_size=1, callbacks=callbacks)
+              nb_epoch=5, batch_size=5, callbacks=callbacks)
 
     end_time = time.time()
 
