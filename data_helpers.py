@@ -17,47 +17,82 @@ def pull_data(track):
     df = pd.read_csv('{0}/{1}/driving_log.csv'.format(base_path, track))
     # remove last entry in data frame
     df = df[0:-2]
-    # pull all records that have a steering angle of 0 and find how many there are
-    zero_records = df.loc[df['steering'] == 0]
-    num_zero = len(zero_records)
-    percent_remove_zero = 0.1
-    subset_zero = zero_records[int(num_zero*percent_remove_zero):]
-    nonzero_records = df.loc[df['steering'] != 0]
-    # combine two data frames
-    df_final = pd.concat([subset_zero, nonzero_records])
-    df_final = df_final.reindex(np.random.permutation(df_final.index))
-    center_imgs = df_final[['center']].values
-    left_imgs = df_final[['left']].values
-    right_imgs = df_final[['right']].values
-    file_paths = []
-    for i in range(center_imgs.shape[0]):
-        file_paths.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0].lstrip()))
-        # file_paths.append('{0}/{1}/{2}'.format(base_path, track, left_imgs[i][0].lstrip()))
-        # file_paths.append('{0}/{1}/{2}'.format(base_path, track, right_imgs[i][0].lstrip()))
+    # # pull all records that have a steering angle of 0 and find how many there are
+    # zero_records = df.loc[df['steering'] == 0]
+    # num_zero = len(zero_records)
+    # percent_remove_zero = 0.55
+    # subset_zero = zero_records[int(num_zero*percent_remove_zero):]
+    # nonzero_records = df.loc[df['steering'] != 0]
+    # # combine two data frames
+    # df_final = pd.concat([subset_zero, nonzero_records])
+    # df_final = df_final.reindex(np.random.permutation(df_final.index))
+    center_imgs = df[['center']].values
+    # left_imgs = df[['left']].values
+    # right_imgs = df[['right']].values
 
-    angles = df_final[['steering']].values
-    throttles = df_final[['throttle']].values
-    return file_paths, angles, throttles
+    angles = df[['steering']].values
+    throttles = df[['throttle']].values
+    file_paths_present = []
+    file_paths_past = []
+    angles_arr_present = []
+    angles_arr_past = []
+    # throttles_arr = []
+    for i in range(center_imgs.shape[0]):
+        if angles[i] == 0:
+            if i % 2 == 0:
+                if i == 0:
+                    file_paths_past.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0].lstrip()))
+                    angles_arr_past.append(angles[i])
+                else:
+                    file_paths_past.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i-1][0].lstrip()))
+                    angles_arr_past.append(angles[i-1])
+
+                file_paths_present.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0].lstrip()))
+                angles_arr_present.append(angles[i])
+        else:
+            if i == 0:
+                file_paths_past.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0].lstrip()))
+                angles_arr_past.append(angles[i])
+            else:
+                file_paths_past.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i-1][0].lstrip()))
+                angles_arr_past.append(angles[i-1])
+
+            file_paths_present.append('{0}/{1}/{2}'.format(base_path, track, center_imgs[i][0].lstrip()))
+            angles_arr_present.append(angles[i])
+
+        # throttles_arr.append(throttles[i])
+        # file_paths.append('{0}/{1}/{2}'.format(base_path, track, left_imgs[i][0].lstrip()))
+        # angles_arr.append(angles[i])
+        # throttles_arr.append(throttles[i])
+        # file_paths.append('{0}/{1}/{2}'.format(base_path, track, right_imgs[i][0].lstrip()))
+        # angles_arr.append(angles[i])
+        # throttles_arr.append(throttles[i])
+
+    return file_paths_present, angles_arr_present, file_paths_past, angles_arr_past
 
 
 def get_training_data():
-    imgs1, angles1, throttles1 = pull_data('drifting')
-    imgs2, angles2, throttles2 = pull_data('track_1_more')
-    imgs3, angles3, throttles3 = pull_data('track_1')
-    imgs4, angles4, throttles4 = pull_data('track_2')
+    imgs1_pres, angles1_pres, imgs1_past, angles1_past = pull_data('drifting')
+    imgs2_pres, angles2_pres, imgs2_past, angles2_past = pull_data('track_1_more')
+    imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1')
+    imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('track_2')
     # stack two sources into one
-    img_files = concat_data(imgs1, imgs2, imgs3, imgs4)
-    angles = merge_data(angles1, angles2, angles3, angles4)
-    throttles = merge_data(throttles1, throttles2, throttles3, throttles4)
+    img_files_pres = concat_data(imgs1_pres, imgs2_pres, imgs3_pres, imgs4_pres)
+    angles_pres = concat_data(angles1_pres, angles2_pres, angles3_pres, angles4_pres)
+
+    img_files_past = concat_data(imgs1_past, imgs2_past, imgs3_past, imgs4_past)
+    angles_past = concat_data(angles1_past, angles2_past, angles3_past, angles4_past)
+    # throttles = concat_data(throttles1, throttles2, throttles3, throttles4)
     # convert inputs and outputs
     # angles = convert_continous_angles_to_bins(angles)
-    images = convert_paths_to_images(img_files)
+    images_pres = convert_paths_to_images(img_files_pres)
+    images_past = convert_paths_to_images(img_files_past)
     # split data into training and validation datasets
-    train_data, validate_data, train_angles, validate_angles, train_throttles, validate_throttles = split_data(images, angles, throttles)
+    train_img_pres, validate_img_pres, train_angles_pres, validate_angles_pres, train_img_past, validate_img_past, train_angles_past, validate_angles_past = split_data(images_pres, angles_pres, images_past, angles_past)
     # combine outputs
-    train_outputs = np.hstack((train_angles, train_throttles))
-    validate_outputs = np.hstack((validate_angles, validate_throttles))
-    return train_data, validate_data, train_angles, validate_angles
+    # train_outputs = np.hstack((train_angles, train_throttles))
+    # validate_outputs = np.hstack((validate_angles, validate_throttles))
+    return train_img_pres, validate_img_pres, train_angles_pres, validate_angles_pres, train_img_past, validate_img_past, train_angles_past, validate_angles_past
 
 
 def merge_data(d1, d2, d3, d4):
@@ -73,7 +108,7 @@ def concat_data(d1, d2, d3, d4):
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 160, 320, 1), dtype=float)
+    img_array = np.zeros((files.shape[0], 40, 80, 1), dtype=float)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i])[..., np.newaxis]
     return img_array
@@ -87,11 +122,12 @@ def convert_to_image(image):
     # plt.imshow(warp_perspective(dir_threshold(np.uint8(img))))
     # plt.imshow(mag_threshold(warped, sobel_kernel=11, thresh=(30, 130)))
     # plt.show()
-    return np.float32(thresh)
+    return np.float32(cv2.resize(thresh, (80, 40)))
 
 
-def split_data(images, angles, throttles):
-    return train_test_split(images, angles, throttles, test_size=0.1)
+def split_data(images_pres, angles_pres, images_past, angles_past):
+    return train_test_split(images_pres, angles_pres,
+                            images_past, angles_past, test_size=0.1)
 
 
 def main():
