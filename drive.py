@@ -28,11 +28,29 @@ tf.python.control_flow_ops = tf
 keras.activations.intensity_norm = intensity_norm
 keras.initializations.custom_init = custom_init
 
+prev_angle = 0
+prev_image = None
+new_image = None
+start = True
+
 
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
-prev_image_array = None
+
+
+class Memory:
+    def __init__(self):
+        self.prev_angle = 0
+        self.prev_image = np.zeros((1, 40, 80, 1))
+
+    def record(self, angle, image):
+        self.prev_image = image
+        self.prev_angle = angle
+
+    def fetch(self):
+        return self.prev_angle, self.prev_image
+
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -47,11 +65,17 @@ def telemetry(sid, data):
     img = base64.b64decode(imgString)
     npimg = np.fromstring(img, dtype=np.uint8)
     image = cv2.imdecode(npimg, 1)
-    scaled_image = image_helper(image)
-    outputs = model.predict(scaled_image, batch_size=1)
+    new_image = image_helper(image)
+
+    prev_angle, prev_image = memory.fetch()
+    prev_angle = np.array(prev_angle)
+
+    outputs = model.predict([prev_image, new_image, prev_angle[np.newaxis, ...]], batch_size=1)
     steering_angle = float(outputs[0])
+    memory.record(steering_angle, new_image)
+
     # throttle = float(outputs[0][1])
-    send_control(float(steering_angle), 0.2)
+    send_control(steering_angle, 0.2)
 
 
 @sio.on('connect')
@@ -72,6 +96,7 @@ def image_helper(image):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     warped = warp_perspective(np.uint8(img))
     img = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
+    img = cv2.resize(img, (80, 40))
     return np.float32(img[np.newaxis, ..., np.newaxis])
 
 
@@ -87,6 +112,8 @@ if __name__ == '__main__':
     model.compile(optimizer='adam', loss='mse')
     weights_file = args.model.replace('json', 'h5')
     model.load_weights(weights_file)
+
+    memory = Memory()
 
     # wrap Flask application with engineio's middleware
     app = socketio.Middleware(sio, app)
