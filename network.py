@@ -5,7 +5,6 @@ from keras.constraints import *
 from keras.layers.normalization import BatchNormalization
 from keras.initializations import normal
 from keras.models import Sequential, Model
-from keras.engine.training import collect_trainable_weights
 from keras.layers import *
 
 
