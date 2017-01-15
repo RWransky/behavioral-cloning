@@ -23,10 +23,9 @@ def train():
                   loss=loss, metrics=[metric])
 
     # save model to json file
-    saving = 'highway_model'
-    if not os.path.exists('./models'):
-        os.makedirs('./models')
-    fModel = open('models/' + saving + '.json', 'w')
+    saving = 'model'
+
+    fModel = open(saving + '.json', 'w')
     json_str = model.to_json()
     fModel.write(json_str)
 
@@ -37,13 +36,10 @@ def train():
     validate_inputs = [validate_img_pres, validate_img_past, validate_angles_past]
 
     print('Training...')
-    path = './training'
-    if not os.path.exists(path):
-        os.makedirs(path)
 
     start_time = time.time()
 
-    fParams = '{0}/{1}.h5'.format(path, saving)
+    fParams = '{}.h5'.format(saving)
     saveParams = ModelCheckpoint(fParams, monitor='val_loss', save_best_only=True)
 
     callbacks = [saveParams]

@@ -15,18 +15,13 @@ from io import BytesIO
 from warp import *
 from sobel import *
 
-from network import intensity_norm, custom_init
+from network import *
 from keras.models import model_from_json
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
-import keras.activations
-import keras.initializations
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
 tf.python.control_flow_ops = tf
-# Patch custom activation
-keras.activations.intensity_norm = intensity_norm
-keras.initializations.custom_init = custom_init
 
 prev_angle = 0
 prev_image = None
@@ -107,7 +102,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.model, 'r') as jfile:
         # model = model_from_json(jfile.read(), {'HighwayUnit': HighwayUnit()})
-        model = model_from_json(jfile.read(), custom_objects={'intensity_norm': intensity_norm, 'custom_init': custom_init})
+        model = model_from_json(jfile.read())
 
     model.compile(optimizer='adam', loss='mse')
     weights_file = args.model.replace('json', 'h5')

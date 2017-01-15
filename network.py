@@ -9,6 +9,7 @@ from keras.engine.training import collect_trainable_weights
 from keras.layers import *
 
 
+# Originally needed image intensity normalization, but final model uses binary images so it is unneccessary.
 def intensity_norm(data):
     return (data/float(255.0))
 
