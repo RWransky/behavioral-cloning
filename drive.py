@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 
 from warp import *
-from sobel import *
+from threshold import *
 
 from network import *
 from keras.models import model_from_json
@@ -37,7 +37,7 @@ model = None
 class Memory:
     def __init__(self):
         self.prev_angle = 0
-        self.prev_image = np.zeros((1, 40, 80, 1))
+        self.prev_image = np.zeros((1, 60, 100, 1))
 
     def record(self, angle, image):
         self.prev_image = image
@@ -70,7 +70,7 @@ def telemetry(sid, data):
     memory.record(steering_angle, new_image)
 
     # throttle = float(outputs[0][1])
-    send_control(steering_angle, 0.2)
+    send_control(steering_angle, 0.8)
 
 
 @sio.on('connect')
@@ -90,8 +90,18 @@ def send_control(steering_angle, throttle):
 def image_helper(image):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     warped = warp_perspective(np.uint8(img))
-    img = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
-    img = cv2.resize(img, (80, 40))
+    # plt.imshow(warped)
+    # plt.show()
+    thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 160),
+                                k_size_mag=13, thresh_mag=(50, 100),
+                                k_size_dir=7, thresh_dir=(50, 100))
+    color_grad_thresh = combine_color_grad_thresholds(warped, thresh,
+                                                      space=cv2.COLOR_RGB2HLS,
+                                                      channel=2, thresh=(30, 100))
+    result = color_grad_thresh
+    # warped = warp_perspective(np.uint8(img))
+    # img = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
+    img = cv2.resize(result, (100, 60))
     return np.float32(img[np.newaxis, ..., np.newaxis])
 
 

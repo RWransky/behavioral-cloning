@@ -17,7 +17,7 @@ def custom_init(shape, name=None):
     return normal(shape, scale=0.01, name=name)
 
 
-def build_network(input_shape=[40, 80, 1]):
+def build_network(input_shape=[60, 100, 1]):
     # input_shape is [n_rows, n_cols, num_channels] of the input images
     activation = 'relu'
 

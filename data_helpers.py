@@ -7,7 +7,7 @@ import cv2
 import os
 
 from warp import *
-from sobel import *
+from threshold import *
 
 base_path = os.getcwd()
 
@@ -108,7 +108,7 @@ def concat_data(d1, d2, d3, d4):
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 40, 80, 1), dtype=float)
+    img_array = np.zeros((files.shape[0], 60, 100, 1), dtype=float)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i])[..., np.newaxis]
     return img_array
@@ -118,11 +118,18 @@ def convert_to_image(image):
     img = cv2.imread(image)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     warped = warp_perspective(np.uint8(img))
-    thresh = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
-    # plt.imshow(warp_perspective(dir_threshold(np.uint8(img))))
-    # plt.imshow(mag_threshold(warped, sobel_kernel=11, thresh=(30, 130)))
+    # plt.imshow(warped)
     # plt.show()
-    return np.float32(cv2.resize(thresh, (80, 40)))
+    thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 160),
+                                k_size_mag=13, thresh_mag=(50, 100),
+                                k_size_dir=7, thresh_dir=(50, 100))
+    color_grad_thresh = combine_color_grad_thresholds(warped, thresh,
+                                                      space=cv2.COLOR_RGB2HLS,
+                                                      channel=2, thresh=(30, 100))
+    result = color_grad_thresh #[60:, :]
+    # plt.imshow(cv2.resize(result, (100, 60)))
+    # plt.show()
+    return np.float32(cv2.resize(result, (100, 60)))
 
 
 def split_data(images_pres, angles_pres, images_past, angles_past):

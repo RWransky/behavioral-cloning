@@ -40,13 +40,13 @@ def train():
     start_time = time.time()
 
     fParams = '{}.h5'.format(saving)
-    saveParams = ModelCheckpoint(fParams, monitor='val_loss', save_best_only=True)
+    saveParams = ModelCheckpoint(fParams, monitor='loss', save_best_only=True)
 
     callbacks = [saveParams]
 
     model.fit(train_inputs, train_angles_pres, verbose=1,
               validation_data=(validate_inputs, validate_angles_pres),
-              nb_epoch=100, batch_size=512, callbacks=callbacks)
+              nb_epoch=50, batch_size=512, callbacks=callbacks)
 
     end_time = time.time()
 
