@@ -72,13 +72,13 @@ def combine_thresholds(img, k_size_sobel=3, thresh_sobel=(0, 255), k_size_dir=3,
     mag_mask = mag_threshold(img, sobel_kernel=k_size_mag, thresh=thresh_mag)
 
     combine = np.zeros_like(mag_mask)
-    combine[((sobel_x == 1) & (sobel_y == 1)) | ((mag_mask == 1) & (dir_mask == 1))] = 1
+    combine[((sobel_x == 1) | (sobel_y == 1)) | ((mag_mask == 1) & (dir_mask == 1))] = 1
     return combine
 
 
 def combine_color_grad_thresholds(img, grad_thres, space=cv2.COLOR_RGB2HLS, channel=2, thresh=(0, 255)):
     color_thresh = color_threshold(img, space=space, channel=channel, thresh=thresh)
     mask = np.zeros_like(color_thresh)
-    mask[(grad_thres == 1) | (color_thresh == 1)] = 1
+    mask[(grad_thres == 1) & (color_thresh == 1)] = 1
     return mask
 
