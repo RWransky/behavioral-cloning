@@ -18,10 +18,14 @@ from threshold import *
 from network import *
 from keras.models import model_from_json
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
+import keras.activations
+
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
 tf.python.control_flow_ops = tf
+
+keras.activations.intensity_norm = intensity_norm
 
 prev_angle = 0
 prev_image = None
@@ -37,7 +41,7 @@ model = None
 class Memory:
     def __init__(self):
         self.prev_angle = 0
-        self.prev_image = np.zeros((1, 60, 100, 1))
+        self.prev_image = np.zeros((1, 160, 320, 3))
 
     def record(self, angle, image):
         self.prev_image = image
@@ -70,7 +74,7 @@ def telemetry(sid, data):
     memory.record(steering_angle, new_image)
 
     # throttle = float(outputs[0][1])
-    send_control(steering_angle, 0.8)
+    send_control(steering_angle, 0.2)
 
 
 @sio.on('connect')
@@ -88,21 +92,25 @@ def send_control(steering_angle, throttle):
 
 # Helper method for image input
 def image_helper(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
     warped = warp_perspective(np.uint8(img))
     # plt.imshow(warped)
     # plt.show()
-    thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 160),
-                                k_size_mag=13, thresh_mag=(50, 100),
-                                k_size_dir=7, thresh_dir=(50, 100))
-    color_grad_thresh = combine_color_grad_thresholds(warped, thresh,
-                                                      space=cv2.COLOR_RGB2HLS,
-                                                      channel=2, thresh=(30, 100))
-    result = color_grad_thresh
-    # warped = warp_perspective(np.uint8(img))
-    # img = mag_threshold(warped, sobel_kernel=11, thresh=(30, 130))
-    img = cv2.resize(result, (100, 60))
-    return np.float32(img[np.newaxis, ..., np.newaxis])
+    # thresh = combine_thresholds(img, k_size_sobel=3, thresh_sobel=(30, 150),
+    #                             k_size_mag=3, thresh_mag=(30, 255),
+    #                             k_size_dir=3, thresh_dir=(0.5, 1.25))
+    # color_grad_thresh = combine_color_grad_thresholds(img, thresh,
+    #                                                   space=cv2.COLOR_RGB2HLS,
+    #                                                   channel=2, thresh=(30, 150))
+    # img = color_grad_thresh[60:145, :]
+    # result = img[60:145, :, :]
+    # result = cv2.resize(result, (80, 40))
+    result = warped
+    # result = cv2.resize(result, (80, 80))
+    # plt.imshow(result[0:85, :])
+    # # plt.imshow(cv2.resize(result, (100, 60)))
+    # plt.show()
+    return np.uint8(result[np.newaxis, ...])
 
 
 if __name__ == '__main__':
@@ -112,7 +120,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.model, 'r') as jfile:
         # model = model_from_json(jfile.read(), {'HighwayUnit': HighwayUnit()})
-        model = model_from_json(jfile.read())
+        model = model_from_json(jfile.read(), {'intensity_norm': intensity_norm})
 
     model.compile(optimizer='adam', loss='mse')
     weights_file = args.model.replace('json', 'h5')

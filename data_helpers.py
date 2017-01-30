@@ -72,10 +72,10 @@ def pull_data(track):
 
 
 def get_training_data():
-    imgs1_pres, angles1_pres, imgs1_past, angles1_past = pull_data('drifting')
-    imgs2_pres, angles2_pres, imgs2_past, angles2_past = pull_data('track_1_more')
+    imgs1_pres, angles1_pres, imgs1_past, angles1_past = pull_data('track_1_more')
+    imgs2_pres, angles2_pres, imgs2_past, angles2_past = pull_data('track_1')
     imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1')
-    imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('track_2')
+    imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('drifting')
     # stack two sources into one
     img_files_pres = concat_data(imgs1_pres, imgs2_pres, imgs3_pres, imgs4_pres)
     angles_pres = concat_data(angles1_pres, angles2_pres, angles3_pres, angles4_pres)
@@ -108,28 +108,33 @@ def concat_data(d1, d2, d3, d4):
 
 
 def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 60, 100, 1), dtype=float)
+    img_array = np.zeros((files.shape[0], 160, 320, 3), dtype=np.uint8)
     for i in range(files.shape[0]):
-        img_array[i] = convert_to_image(files[i])[..., np.newaxis]
+        img_array[i] = convert_to_image(files[i])[...]
     return img_array
 
 
 def convert_to_image(image):
     img = cv2.imread(image)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     warped = warp_perspective(np.uint8(img))
-    # plt.imshow(warped)
+    # thresh = combine_thresholds(img, k_size_sobel=3, thresh_sobel=(30, 150),
+    #                             k_size_mag=3, thresh_mag=(30, 255),
+    #                             k_size_dir=3, thresh_dir=(0.5, 1.25))
+    # color_grad_thresh = combine_color_grad_thresholds(img, thresh,
+    #                                                   space=cv2.COLOR_RGB2HLS,
+    #                                                   channel=2, thresh=(30, 150))
+    # result = color_grad_thresh[60:145, :]
+    # result = img[60:145, :, :]
+    # result = cv2.resize(result, (80, 80))
+    result = warped
+    # plt.imshow(np.uint8(result)/float(255.0))
     # plt.show()
-    thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 160),
-                                k_size_mag=13, thresh_mag=(50, 100),
-                                k_size_dir=7, thresh_dir=(50, 100))
-    color_grad_thresh = combine_color_grad_thresholds(warped, thresh,
-                                                      space=cv2.COLOR_RGB2HLS,
-                                                      channel=2, thresh=(30, 100))
-    result = color_grad_thresh #[60:, :]
-    # plt.imshow(cv2.resize(result, (100, 60)))
+    # plt.imshow(result[0:85, :])
+    # # plt.imshow(cv2.resize(result, (100, 60)))
+    # plt.imshow(cv2.resize(result, (80, 80)))
     # plt.show()
-    return np.float32(cv2.resize(result, (100, 60)))
+    return np.uint8(result[...])
 
 
 def split_data(images_pres, angles_pres, images_past, angles_past):
