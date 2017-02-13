@@ -1,14 +1,29 @@
 import cv2
 import numpy as np
 
-# Define source points taken from image of straight lanes
-src_pts = np.float32([[0, 135], [320, 135], [280, 70], [50, 50]])
+# src coordinates
+src = np.float32([
+    [0, 75],
+    [0, 115],
+    [320, 115],
+    [320, 75]
+])
+
+# dest coordinates
+dst = np.float32([
+    [-50, 0],
+    [10, 120],
+    [300, 120],
+    [370, 0]
+])
 
 
 # Note image is undistorted image
-def warp_perspective(image):
+def get_trans_mtx(image):
     img_size = (image.shape[1], image.shape[0])
-    dst_pts = np.float32([[0, 160], [320, 160],
-                         [320, 0], [0, -50]])
-    trans_mtx = cv2.getPerspectiveTransform(src_pts, dst_pts)
-    return cv2.warpPerspective(image, trans_mtx, img_size)
+    trans_mtx = cv2.getPerspectiveTransform(src, dst)
+    return trans_mtx
+
+
+def warp_perspective(image, M):
+    return cv2.warpPerspective(image, M, (image.shape[1], image.shape[0]), flags=cv2.INTER_NEAREST)

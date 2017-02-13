@@ -4,7 +4,8 @@ import numpy as np
 
 def sobel_abs_threshold(img, direction='x', sobel_kernel=3, thresh=(0, 255)):
     # 1) Convert to grayscale assumes RGB input
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    gray = hls[:, :, 2]
     # 2) Take the derivative in x or y given direction = 'x' or 'y'
     if direction == 'x':
         sobel = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
@@ -22,7 +23,8 @@ def sobel_abs_threshold(img, direction='x', sobel_kernel=3, thresh=(0, 255)):
 
 def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     # 1) Convert to grayscale assumes RGB input
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    gray = hls[:, :, 2]
     # 2) Take the gradient in x and y separately
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
@@ -30,18 +32,19 @@ def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     abs_sobelx = np.absolute(sobelx)
     abs_sobely = np.absolute(sobely)
     # 4) Use np.arctan2(abs_sobely, abs_sobelx) to calculate the direction of the gradient
-    dir = np.arctan2(abs_sobely, abs_sobelx)
+    direction = np.arctan2(abs_sobely, abs_sobelx)
     # 5) Create a binary mask where direction thresholds are met
-    mask = np.zeros_like(dir)
+    mask = np.zeros_like(direction)
     lower = thresh[0]
     upper = thresh[1]
-    mask[(dir <= upper) & (dir >= lower)] = 1
+    mask[(direction <= upper) & (direction >= lower)] = 1
     return mask
 
 
 def mag_threshold(img, sobel_kernel=3, thresh=(0, 255)):
     # 1) Convert to grayscale assumes RGB input
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    gray = hls[:, :, 2]
     # 2) Take the gradient in x and y separately
     sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
     sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1)
@@ -72,7 +75,7 @@ def combine_thresholds(img, k_size_sobel=3, thresh_sobel=(0, 255), k_size_dir=3,
     mag_mask = mag_threshold(img, sobel_kernel=k_size_mag, thresh=thresh_mag)
 
     combine = np.zeros_like(mag_mask)
-    combine[((sobel_x == 1) | (sobel_y == 1)) | ((mag_mask == 1) & (dir_mask == 1))] = 1
+    combine[((sobel_x == 1) & (sobel_y == 1)) | ((mag_mask == 1) & (dir_mask == 1))] = 1
     return combine
 
 
@@ -81,4 +84,3 @@ def combine_color_grad_thresholds(img, grad_thres, space=cv2.COLOR_RGB2HLS, chan
     mask = np.zeros_like(color_thresh)
     mask[(grad_thres == 1) & (color_thresh == 1)] = 1
     return mask
-
