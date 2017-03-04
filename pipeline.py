@@ -16,20 +16,8 @@ class Pipeline():
         # plt.show()
 
     def process(self, image):
-        img = warp_perspective(image, self.M)
-        blur = cv2.bilateralFilter(img, 25, 100, 100)
-        # blur = warp_perspective(image, self.M)
-        thresh = combine_thresholds(blur, k_size_sobel=5, thresh_sobel=(20, 200),
-                                    k_size_mag=5, thresh_mag=(30, 200),
-                                    k_size_dir=5, thresh_dir=(0.7, 1.3))
-        color_grad_thresh = combine_color_grad_thresholds(blur, thresh,
-                                                          space=cv2.COLOR_RGB2HLS,
-                                                          channel=2, thresh=(100, 250))
+        # img = warp_perspective(image, self.M)
+        blur = cv2.bilateralFilter(image, 25, 100, 100)
         color_thresh = color_threshold(blur, space=cv2.COLOR_RGB2HSV,
-                                    channel=2, thresh=(90, 130))
-        # plt.imshow(color_thresh)
-        # plt.show()
-        transformed_img = color_thresh
-        # transformed_img = warp_perspective(color_thresh, self.M)
-        result = process_image_for_lanes(transformed_img, image, self.Minv)
-        return result
+                                    channel=2, thresh=(90, 170))
+        return color_thresh[int(image.shape[0]/3):, :]

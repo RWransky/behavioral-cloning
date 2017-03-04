@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 
-from warp import *
-from threshold import *
+from pipeline import *
 
 base_path = os.getcwd()
 
@@ -72,10 +71,13 @@ def pull_data(track):
 
 
 def get_training_data():
+    # define image processing pipeline object
+    pipeline = Pipeline()
+    # pull data
     imgs1_pres, angles1_pres, imgs1_past, angles1_past = pull_data('track_1_more')
     imgs2_pres, angles2_pres, imgs2_past, angles2_past = pull_data('track_1')
-    imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1')
-    imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('drifting')
+    imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1_more')
+    imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('track_1_more')
     # stack two sources into one
     img_files_pres = concat_data(imgs1_pres, imgs2_pres, imgs3_pres, imgs4_pres)
     angles_pres = concat_data(angles1_pres, angles2_pres, angles3_pres, angles4_pres)
@@ -85,8 +87,8 @@ def get_training_data():
     # throttles = concat_data(throttles1, throttles2, throttles3, throttles4)
     # convert inputs and outputs
     # angles = convert_continous_angles_to_bins(angles)
-    images_pres = convert_paths_to_images(img_files_pres)
-    images_past = convert_paths_to_images(img_files_past)
+    images_pres = convert_paths_to_images(img_files_pres, pipeline)
+    images_past = convert_paths_to_images(img_files_past, pipeline)
     # split data into training and validation datasets
     train_img_pres, validate_img_pres, train_angles_pres, validate_angles_pres, train_img_past, validate_img_past, train_angles_past, validate_angles_past = split_data(images_pres, angles_pres, images_past, angles_past)
     # combine outputs
@@ -107,39 +109,39 @@ def concat_data(d1, d2, d3, d4):
     return np.concatenate([merge1, merge2])
 
 
-def convert_paths_to_images(files):
-    img_array = np.zeros((files.shape[0], 160, 320, 3), dtype=np.uint8)
+def convert_paths_to_images(files, pipeline):
+    img_array = np.zeros((files.shape[0], 80, 160, 3), dtype=np.uint8)
     for i in range(files.shape[0]):
-        img_array[i] = convert_to_image(files[i])[...]
+        img_array[i] = convert_to_image(files[i], pipeline)[...]
     return img_array
 
 
-def convert_to_image(image):
+def convert_to_image(image, pipeline):
     img = cv2.imread(image)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-    warped = warp_perspective(np.uint8(img))
-    # thresh = combine_thresholds(img, k_size_sobel=3, thresh_sobel=(30, 150),
-    #                             k_size_mag=3, thresh_mag=(30, 255),
-    #                             k_size_dir=3, thresh_dir=(0.5, 1.25))
-    # color_grad_thresh = combine_color_grad_thresholds(img, thresh,
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # result = pipeline.process(img)
+    # warped = warp_perspective(np.uint8(img))
+    # thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 255),
+    #                             k_size_mag=7, thresh_mag=(30, 255),
+    #                             k_size_dir=7, thresh_dir=(0.2, 1.25))
+    # color_grad_thresh = combine_color_grad_thresholds(warped, thresh,
     #                                                   space=cv2.COLOR_RGB2HLS,
     #                                                   channel=2, thresh=(30, 150))
-    # result = color_grad_thresh[60:145, :]
-    # result = img[60:145, :, :]
-    # result = cv2.resize(result, (80, 80))
-    result = warped
-    # plt.imshow(np.uint8(result)/float(255.0))
-    # plt.show()
-    # plt.imshow(result[0:85, :])
-    # # plt.imshow(cv2.resize(result, (100, 60)))
-    # plt.imshow(cv2.resize(result, (80, 80)))
-    # plt.show()
+    # # result = color_grad_thresh[60:145, :]
+    # # result = img[60:145, :, :]
+    # # result = cv2.resize(result, (80, 80))
+    # result = cv2.cvtColor(warped, cv2.COLOR_RGB2HLS)
+    # # plt.imshow(np.uint8(result)/float(255.0))
+    # # plt.show()
+    # # plt.imshow(result[0:85, :])
+    # # # plt.imshow(cv2.resize(result, (100, 60)))
+    result = cv2.resize(img, (160, 80))
     return np.uint8(result[...])
 
 
 def split_data(images_pres, angles_pres, images_past, angles_past):
     return train_test_split(images_pres, angles_pres,
-                            images_past, angles_past, test_size=0.1)
+                            images_past, angles_past, test_size=0.01)
 
 
 def main():

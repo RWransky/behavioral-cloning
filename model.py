@@ -46,7 +46,7 @@ def train():
 
     model.fit(train_inputs, train_angles_pres, verbose=1,
               validation_data=(validate_inputs, validate_angles_pres),
-              nb_epoch=10, batch_size=1024, callbacks=callbacks)
+              nb_epoch=5, batch_size=1, callbacks=callbacks)
 
     end_time = time.time()
 

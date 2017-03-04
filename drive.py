@@ -14,6 +14,7 @@ from io import BytesIO
 
 from warp import *
 from threshold import *
+from pipeline import *
 
 from network import *
 from keras.models import model_from_json
@@ -41,7 +42,7 @@ model = None
 class Memory:
     def __init__(self):
         self.prev_angle = 0
-        self.prev_image = np.zeros((1, 160, 320, 3))
+        self.prev_image = np.zeros((1, 80, 160, 3))
 
     def record(self, angle, image):
         self.prev_image = image
@@ -74,7 +75,7 @@ def telemetry(sid, data):
     memory.record(steering_angle, new_image)
 
     # throttle = float(outputs[0][1])
-    send_control(steering_angle, 0.2)
+    send_control(steering_angle, 0.8)
 
 
 @sio.on('connect')
@@ -92,24 +93,10 @@ def send_control(steering_angle, throttle):
 
 # Helper method for image input
 def image_helper(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
-    warped = warp_perspective(np.uint8(img))
-    # plt.imshow(warped)
-    # plt.show()
-    # thresh = combine_thresholds(img, k_size_sobel=3, thresh_sobel=(30, 150),
-    #                             k_size_mag=3, thresh_mag=(30, 255),
-    #                             k_size_dir=3, thresh_dir=(0.5, 1.25))
-    # color_grad_thresh = combine_color_grad_thresholds(img, thresh,
-    #                                                   space=cv2.COLOR_RGB2HLS,
-    #                                                   channel=2, thresh=(30, 150))
-    # img = color_grad_thresh[60:145, :]
-    # result = img[60:145, :, :]
-    # result = cv2.resize(result, (80, 40))
-    result = warped
-    # result = cv2.resize(result, (80, 80))
-    # plt.imshow(result[0:85, :])
-    # # plt.imshow(cv2.resize(result, (100, 60)))
-    # plt.show()
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # result = pipeline.process(img)
+    result = img
+    result = cv2.resize(result, (160, 80))
     return np.uint8(result[np.newaxis, ...])
 
 
@@ -127,6 +114,8 @@ if __name__ == '__main__':
     model.load_weights(weights_file)
 
     memory = Memory()
+
+    pipeline = Pipeline()
 
     # wrap Flask application with engineio's middleware
     app = socketio.Middleware(sio, app)
