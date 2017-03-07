@@ -76,7 +76,7 @@ def get_training_data():
     # pull data
     imgs1_pres, angles1_pres, imgs1_past, angles1_past = pull_data('track_1_more')
     imgs2_pres, angles2_pres, imgs2_past, angles2_past = pull_data('track_1')
-    imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1_more')
+    imgs3_pres, angles3_pres, imgs3_past, angles3_past = pull_data('track_1')
     imgs4_pres, angles4_pres, imgs4_past, angles4_past = pull_data('track_1_more')
     # stack two sources into one
     img_files_pres = concat_data(imgs1_pres, imgs2_pres, imgs3_pres, imgs4_pres)
@@ -110,7 +110,7 @@ def concat_data(d1, d2, d3, d4):
 
 
 def convert_paths_to_images(files, pipeline):
-    img_array = np.zeros((files.shape[0], 80, 160, 3), dtype=np.uint8)
+    img_array = np.zeros((files.shape[0], 40, 80, 3), dtype=np.uint8)
     for i in range(files.shape[0]):
         img_array[i] = convert_to_image(files[i], pipeline)[...]
     return img_array
@@ -119,6 +119,7 @@ def convert_paths_to_images(files, pipeline):
 def convert_to_image(image, pipeline):
     img = cv2.imread(image)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = img[int(img.shape[0]/3):,:]
     # result = pipeline.process(img)
     # warped = warp_perspective(np.uint8(img))
     # thresh = combine_thresholds(warped, k_size_sobel=7, thresh_sobel=(30, 255),
@@ -135,7 +136,8 @@ def convert_to_image(image, pipeline):
     # # plt.show()
     # # plt.imshow(result[0:85, :])
     # # # plt.imshow(cv2.resize(result, (100, 60)))
-    result = cv2.resize(img, (160, 80))
+    result = cv2.resize(img, (80, 40))
+    
     return np.uint8(result[...])
 
 

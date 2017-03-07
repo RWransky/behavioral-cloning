@@ -42,7 +42,7 @@ model = None
 class Memory:
     def __init__(self):
         self.prev_angle = 0
-        self.prev_image = np.zeros((1, 80, 160, 3))
+        self.prev_image = np.zeros((1, 40, 80, 3))
 
     def record(self, angle, image):
         self.prev_image = image
@@ -94,9 +94,10 @@ def send_control(steering_angle, throttle):
 # Helper method for image input
 def image_helper(image):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    img = img[int(img.shape[0]/3):,:]
     # result = pipeline.process(img)
     result = img
-    result = cv2.resize(result, (160, 80))
+    result = cv2.resize(result, (80, 40))
     return np.uint8(result[np.newaxis, ...])
 
 

@@ -17,7 +17,7 @@ def custom_init(shape, name=None):
     return normal(shape, scale=0.01, name=name)
 
 
-def build_network(input_shape=[80, 160, 3]):
+def build_network(input_shape=[40, 80, 3]):
     # input_shape is [n_rows, n_cols, num_channels] of the input images
     activation = 'relu'
 
@@ -30,14 +30,14 @@ def build_network(input_shape=[80, 160, 3]):
     past_image.add(Convolution2D(32, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation, input_shape=(nrows, ncols, nchannels)))
     past_image.add(MaxPooling2D(pool_size=(3, 3), strides=(1, 1), border_mode='same'))
     past_image.add(Dropout(0.3))
-    # past_image.add(Convolution2D(36, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
+    past_image.add(Convolution2D(36, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
     past_image.add(Convolution2D(48, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
     past_image.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='same'))
 
     # Final two convolutional layers with 3x3 kernal and no stride
     past_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
     past_image.add(Dropout(0.3))
-    # past_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
+    past_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
     past_image.add(MaxPooling2D(pool_size=(3, 3), strides=(1, 1), border_mode='same'))
 
     # Flatten convolition layers
@@ -54,14 +54,14 @@ def build_network(input_shape=[80, 160, 3]):
     present_image.add(Convolution2D(32, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation, input_shape=(nrows, ncols, nchannels)))
     present_image.add(MaxPooling2D(pool_size=(3, 3), strides=(1, 1), border_mode='same'))
     present_image.add(Dropout(0.3))
-    # present_image.add(Convolution2D(36, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
+    present_image.add(Convolution2D(36, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
     present_image.add(Convolution2D(48, 5, 5, subsample=(2, 2), border_mode='same', init='normal', activation=activation))
     present_image.add(MaxPooling2D(pool_size=(3, 3), strides=(2, 2), border_mode='same'))
 
     # Final two convolutional layers with 3x3 kernal and no stride
     present_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
     present_image.add(Dropout(0.3))
-    # present_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
+    present_image.add(Convolution2D(64, 3, 3, border_mode='same', subsample=(1, 1), init='normal', activation=activation))
     present_image.add(MaxPooling2D(pool_size=(3, 3), strides=(1, 1), border_mode='same'))
 
     # Flatten convolition layers
