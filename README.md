@@ -15,21 +15,17 @@ This Keras model was built to satisfy the requirements for a project in Udacity'
 Model Data Description
 -----------------------
 This model requires three inputs:
-- Previous center image (binarized lane mask)
+- Previous center image (RGB cropped and intensity normalized)
 - Previous steering angle (already normalized to [-1, 1])
-- Current center image (binarized lane mask)
+- Current center image (RGB cropped and intensity normalized)
 
-Both images undergo three transforms before being fed into the model. First, a perspective transform is done to convert the image perspective from straight ahead to birds-eye view. Next, a Sobel transform thresholded by magnitude values is done. Finally, the resulting binary mask is cropeed to be 40x80. See images below for visualizations.
+Both images undergo transforms before being fed into the model. First, the image is cropped to remove unnecessary data from above the road. This cropped image is then shrunk to be 40x80. The image stays in the RGB color channel. Before being fed into the model, each image is intesity normalized to be within the range of [0, 1].
 
 **Source Image**
-![center_image](https://cloud.githubusercontent.com/assets/13735131/21959385/34264b22-da93-11e6-94ad-9bcfa52aee55.png)
+![figure_1](https://cloud.githubusercontent.com/assets/13735131/23663675/4fe248a0-0321-11e7-8bbc-daefdb238e93.png)
 
-**Perspective Transform**
-![warped](https://cloud.githubusercontent.com/assets/13735131/21959384/342656e4-da93-11e6-8537-e289dfd7054f.png)
-
-**Sobel Magnitude Threshold (Final Input)**
-![sobel_thresh](https://cloud.githubusercontent.com/assets/13735131/21959383/34256d1a-da93-11e6-86bd-15cdad04cabf.png)
-
+**Cropped and Resized**
+![cropped](https://cloud.githubusercontent.com/assets/13735131/23663674/4fe1dee2-0321-11e7-923d-4f7e58fcdbe2.png)
 
 Model Description
 ----------------------
@@ -39,12 +35,12 @@ The core model is a multi-branched convolutional regressive neural network. It d
 
 Training Description
 ----------------------
-The model was trained using a dataset from [track 1](https://d17h27t6h515a5.cloudfront.net/topher/2016/December/584f6edd_data/data.zip), a dataset from track 2, and a dataset from track 1 that exhibited lane recovery maneuvers. Each dataset emphasized normal driving conditions with the car staying on the track at all times.
+The model was trained using a dataset from [track 1](https://d17h27t6h515a5.cloudfront.net/topher/2016/December/584f6edd_data/data.zip) and a dataset from track 1 that exhibited lane recovery maneuvers. Each dataset emphasized normal driving conditions with the car staying on the track at all times.
 
 Because this model is regressive in nature, the training methodology involved reducing the mean squared error loss computed between the true angle vs. the predicted angle.
 
-An Adam optimizer was used with 100 training epochs with batch sizes of 512.
+An Adam optimizer was used with 100 training epochs with batch sizes of 300.
 
-To avoid overfitting, dropout regularization was incorporated throughout many of the model's layers. Additionally, the initial dataset was split into a training set and a validation set, with 10% of all data belonging to the validation set.
+To avoid overfitting, dropout regularization was incorporated throughout many of the model's layers. Additionally, the initial dataset was split into a training set and a validation set, with 1% of all data belonging to the validation set. Only 1% was used because the total dataset size was over 15,000 images.
 
 The final model that was saved was based upon the best mean squared error loss recorded for the validation dataset.
